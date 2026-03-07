@@ -1,0 +1,27 @@
+# --- Secrets & Environment ---
+.env
+*.env
+auth.json
+
+# --- Go Specifics ---
+vanguard        # The compiled binary (if built locally)
+bin/
+obj/
+/vendor/        # Only if using go mod vendor
+
+# --- Python Legacy (Cleanup) ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+flask_cache/    # Old Python cache folder
+
+# --- OS & IDE ---
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.log
+
+sandbox/

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Squad Mode | VNR Vanguard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/css/style.css" />
+    <style>
+        /* Include the same CSS as index.html here for the base styles */
+        body { background: #050810; color: #f8fafc; font-family: "Plus Jakarta Sans", sans-serif; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .card { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(16px); padding: 40px; border-radius: 24px; border: 1px solid rgba(255,255,255,0.08); }
+        textarea { width: 100%; height: 120px; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; margin: 15px 0; font-family: monospace; resize: vertical; box-sizing: border-box; }
+        select { width: 100%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-sizing: border-box;}
+        .btn { background: #38bdf8; color: #000; font-weight: 800; padding: 15px 30px; border: none; border-radius: 12px; cursor: pointer; display: block; width: 100%; }
+        .table-container { margin-top: 30px; background: #111827; border-radius: 20px; overflow: hidden; display: none; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .rank-badge { background: #1e293b; padding: 6px 12px; border-radius: 8px; color: #38bdf8; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h1 style="margin:0; font-weight: 800;">Squad Leaderboard</h1>
+        <p style="color: #94a3b8;">Paste roll numbers separated by commas, spaces, or even raw chat text.</p>
+        
+        <select id="examInput"><option>Loading Exams...</option></select>
+        <textarea id="rollsInput" placeholder="22071A0501, 22071A0502..."></textarea>
+        <button class="btn" onclick="fetchSquad()">Build Leaderboard</button>
+    </div>
+
+    <div id="tableWrapper" class="table-container">
+        <table>
+            <thead><tr><th>Rank</th><th>Roll No</th><th>Name</th><th>SGPA</th></tr></thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    // Initialize Exams
+    fetch('/api/v1/exams').then(r => r.json()).then(data => {
+        const sel = document.getElementById('examInput');
+        sel.innerHTML = '';
+        data.exams.forEach(e => sel.innerHTML += `<option value="${e.id}">${e.name}</option>`);
+    });
+
+    async function fetchSquad() {
+        const rolls = document.getElementById('rollsInput').value;
+        const exam = document.getElementById('examInput').value;
+        if(!rolls) return alert("Enter some roll numbers!");
+
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="4" style="text-align:center;">Scraping College Portal...</td></tr>';
+        document.getElementById('tableWrapper').style.display = 'block';
+
+        const res = await fetch('/api/v1/squad', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({roll_numbers: rolls, exam_id: exam})
+        });
+        
+        const data = await res.json();
+        if(data.error) return alert(data.error);
+
+        document.getElementById('tableBody').innerHTML = data.leaderboard.map((s, i) => `
+            <tr>
+                <td><span class="rank-badge">#${i+1}</span></td>
+                <td style="font-family: monospace;">${s.roll}</td>
+                <td style="font-weight:bold;"><a href="/report?roll=${s.roll}&exam=${exam}" style="color:#fff; text-decoration:none;">${s.name}</a></td>
+                <td style="color: #10b981; font-weight: bold;">${s.sgpa}</td>
+            </tr>
+        `).join('');
+    }
+</script>
+</body>
+</html>

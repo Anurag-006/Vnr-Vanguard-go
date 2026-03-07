@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VNR Vanguard | Results Engine</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet" />
+
+    <style>
+      :root {
+        --bg: #0b0f1a;
+        --surface: #161b2c;
+        --accent: #38bdf8;
+        --accent-glow: rgba(56, 189, 248, 0.3);
+        --text-main: #f1f5f9;
+        --text-dim: #94a3b8;
+        --success: #10b981;
+        --danger: #ef4444;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text-main);
+        font-family: "Plus Jakarta Sans", sans-serif;
+        margin: 0; padding: 20px;
+        display: flex; justify-content: center;
+      }
+
+      .container { width: 100%; max-width: 1100px; }
+
+      /* --- Cards --- */
+      .header-card {
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        padding: 40px;
+        text-align: center;
+        margin-bottom: 30px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      }
+      .sgpa-pill.withheld {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.update-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    letter-spacing: 0.3px;
+    opacity: 0;
+    transform: translateY(6px);
+}
+
+/* L1 RAM */
+.badge-l1 {
+    background: rgba(16,185,129,0.12);
+    color: #10b981;
+    border-color: rgba(16,185,129,0.25);
+}
+
+/* L2 Redis */
+.badge-l2 {
+    background: linear-gradient(135deg, rgba(220,38,38,0.12), rgba(185,28,28,0.18));
+    color: #dc2626;
+    border-color: rgba(220,38,38,0.25);
+}
+
+/* Origin */
+.badge-live {
+    background: rgba(59,130,246,0.12);
+    color: #3b82f6;
+    border-color: rgba(59,130,246,0.25);
+}
+
+/* slide + fade animation */
+@keyframes badgeSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.badge-show {
+    animation: badgeSlideIn 260ms cubic-bezier(.2,.8,.2,1) forwards;
+}
+
+tr.withheld-row {
+    opacity: 0.6;
+    background: rgba(255, 0, 0, 0.02);
+}
+      .filter-card {
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        margin-bottom: 20px;
+        display: none; /* Shown only after search */
+      }
+
+      h1 { font-size: 2.5rem; margin: 0; font-weight: 800; letter-spacing: -1px; }
+      .subtitle { color: var(--text-dim); margin-top: 10px; }
+
+      /* --- Badges --- */
+      .update-badge {
+        background: rgba(56, 189, 248, 0.1);
+        color: var(--accent);
+        padding: 6px 14px;
+        border-radius: 99px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        display: inline-block;
+        margin-bottom: 15px;
+        border: 1px solid rgba(56, 189, 248, 0.2);
+      }
+
+      /* --- Inputs & UI --- */
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 15px; margin-top: 30px;
+      }
+
+      select, input, .fetch-btn {
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: white; padding: 14px 20px;
+        border-radius: 12px; font-size: 1rem;
+        outline: none; transition: 0.3s;
+        width: 100%; box-sizing: border-box;
+      }
+
+      input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-glow); }
+
+      .fetch-btn {
+        background: var(--accent);
+        color: #000; font-weight: 800;
+        cursor: pointer; border: none;
+        display: inline-block; text-align: center;
+        text-decoration: none;
+      }
+
+      .fetch-btn:hover { transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent-glow); }
+
+      /* --- Leaderboard Table --- */
+      .table-container {
+        background: var(--surface);
+        border-radius: 24px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        display: none;
+      }
+
+      table { width: 100%; border-collapse: collapse; }
+      th { background: rgba(255, 255, 255, 0.03); text-align: left; padding: 20px; color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; letter-spacing: 1px; }
+      td { padding: 18px 20px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+      tr { transition: 0.2s; border-left: 3px solid transparent; }
+      tr:hover { background: rgba(56, 189, 248, 0.05); border-left: 3px solid var(--accent); }
+
+      .student-name-link { color: var(--accent); text-decoration: none; font-weight: 700; font-size: 1.05rem; transition: 0.3s; display: inline-block; }
+      .student-name-link:hover { color: #fff; transform: translateX(5px); text-shadow: 0 0 15px var(--accent-glow); }
+
+      .rank-badge { background: #1e293b; padding: 6px 12px; border-radius: 8px; font-weight: 600; color: var(--accent); }
+      .sgpa-pill { background: rgba(16, 185, 129, 0.1); color: var(--success); padding: 8px 16px; border-radius: 99px; font-weight: 800; display: inline-block; }
+      .sgpa-pill.withheld { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+      
+      /* --- Utility --- */
+      #loadingOverlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(11, 15, 26, 0.9);
+        display: none; flex-direction: column;
+        justify-content: center; align-items: center;
+        z-index: 1000;
+      }
+
+      .spinner {
+        width: 50px; height: 50px;
+        border: 5px solid rgba(56, 189, 248, 0.1);
+        border-top-color: var(--accent);
+        border-radius: 50%;
+        animation: spin 1s infinite linear;
+      }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+
+.export-btn {
+  position: fixed;
+  bottom: 30px; 
+  right: 30px;
+  background: var(--accent);
+  color: #000; 
+  padding: 16px 28px;
+  border-radius: 99px; 
+  font-weight: 800;
+  box-shadow: 0 10px 30px var(--accent-glow);
+  transition: 0.3s; 
+  z-index: 1000; /* High z-index to stay on top */
+  text-decoration: none; 
+  border: none;
+  cursor: pointer;
+  display: none; /* Hidden by default */
+}
+
+.export-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 15px 35px var(--accent-glow);
+}
+
+      .placeholder-state { text-align: center; padding: 80px 20px; color: var(--text-dim); }
+    </style>
+  </head>
+
+  <body>
+    <div id="loadingOverlay">
+      <div class="spinner"></div>
+      <h2 style="margin-top: 20px">Scraping VNR Portal...</h2>
+      <p style="color: var(--text-dim)">Fetching results from college server.</p>
+    </div>
+
+    <div class="container">
+      <div class="header-card">
+        <h1>VNR Vanguard</h1>
+        <p class="subtitle">Academic Leaderboard • <a href="/friends" style="color: var(--accent); text-decoration: none">Squad Mode</a></p>
+
+        <form id="searchForm" class="controls">
+          <select id="sectionInput" required>
+            <option value="" disabled selected>Loading Dept...</option>
+          </select>
+
+          <select id="yearInput" required>
+            <option value="" disabled selected>Select Batch</option>
+            <option value="21">2021 Batch</option>
+            <option value="22">2022 Batch</option>
+            <option value="23">2023 Batch</option>
+            <option value="24">2024 Batch</option>
+          </select>
+
+          <select id="examInput" required>
+            <option value="" disabled selected>Loading Exams...</option>
+          </select>
+
+          <button type="submit" class="fetch-btn">🔍 View Results</button>
+        </form>
+      </div>
+
+      <div id="metaRow" style="display: none; justify-content: space-between; align-items: flex-end">
+        <div id="metaBadge" class="update-badge"></div>
+        <div id="studentCount" style="margin-bottom: 15px; color: var(--text-dim); font-size: 0.8rem"></div>
+      </div>
+
+      <div id="filterCard" class="filter-card">
+        <div class="controls" style="margin-top: 0; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))">
+          <select id="statusFilter">
+            <option value="all">All Results</option>
+            <option value="pass">Passed Only</option>
+            <option value="fail">Backlogs (FAIL)</option>
+          </select>
+
+          <select id="subjectFilter">
+            <option value="all">Sort by Subject Toppers...</option>
+          </select>
+
+          <a id="statsLink" href="#" class="fetch-btn" style="background: var(--success); line-height: 18px; padding-top: 13px">📈 Stats</a>
+        </div>
+      </div>
+
+      <div id="searchRow" style="margin-bottom: 20px; display: none;">
+        <input type="text" id="searchInput" placeholder="Quick find by name or roll..." />
+      </div>
+
+      <div id="tableWrapper" class="table-container">
+        <table id="resultsTable">
+          <thead>
+            <tr>
+              <th>Rank</th>
+              <th>Roll Number</th>
+              <th>Student Name</th>
+              <th>SGPA / Subject GP</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <div id="emptyState" class="placeholder-state">
+        <div style="font-size: 4rem; margin-bottom: 20px">📊</div>
+        <h2>Select a Batch & Dept</h2>
+        <p>Results are cached to protect the portal.</p>
+      </div>
+
+      <button id="exportCsvBtn" class="export-btn">📊 Export CSV</button>
+    </div>
+
+    <script src="/js/dashboard.js"></script>
+  </body>
+</html>

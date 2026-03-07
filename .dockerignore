@@ -1,0 +1,27 @@
+# --- Ignore Git metadata (Massive) ---
+.git
+.gitignore
+
+# --- Ignore local secrets ---
+.env
+*.env
+
+# --- Ignore Documentation & Local Notes ---
+README.md
+docs/
+*.pdf
+*.csv        # Prevents local test exports from bloating the image
+
+# --- Ignore local build artifacts ---
+vanguard
+go.sum
+vendor/
+
+# --- Ignore Python Leftovers ---
+__pycache__/
+flask_cache/
+venv/
+
+# --- Ignore IDE configs ---
+.vscode/
+.idea/
