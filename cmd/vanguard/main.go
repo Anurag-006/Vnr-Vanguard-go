@@ -18,11 +18,15 @@ func main() {
 		log.Println("No .env file found, relying on system environment variables.")
 	}
 
-	cache.InitRedis()
+	go cache.InitRedis()
 
 	adminPassword := os.Getenv("ADMIN_PASSWORD")
 	if adminPassword == "" {
 		adminPassword = "supersecretfallback"
+	}
+
+	if os.Getenv("GIN_MODE") == "release" {
+	    gin.SetMode(gin.ReleaseMode)
 	}
 
 	router := gin.Default()
