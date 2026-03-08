@@ -14,7 +14,6 @@ docs/
 
 # --- Ignore local build artifacts ---
 vanguard
-go.sum
 vendor/
 
 # --- Ignore Python Leftovers ---
