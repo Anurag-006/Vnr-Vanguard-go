@@ -250,4 +250,6 @@ function exportToCSV() {
             `;
         }).join('');
     }
+    fetch('/api/v1/track', { method: 'POST' })
+    .catch(e => console.log("Analytics ping failed, but that's okay."));
 });

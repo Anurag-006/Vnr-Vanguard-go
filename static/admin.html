@@ -6,85 +6,198 @@
     <title>Vanguard Command Center</title>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background: #050505; color: #00ff00; font-family: 'JetBrains Mono', monospace; padding: 40px; }
-        .dashboard { max-width: 800px; margin: 0 auto; border: 1px solid #333; padding: 30px; border-radius: 8px; background: #0a0a0a; }
-        h1 { border-bottom: 1px dashed #333; padding-bottom: 10px; margin-top: 0; }
-        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 30px 0; }
-        .metric-card { background: #111; padding: 20px; border-radius: 6px; border: 1px solid #222; }
-        .metric-value { font-size: 2rem; font-weight: bold; color: #fff; margin-bottom: 5px; }
-        .metric-label { color: #888; font-size: 0.85rem; text-transform: uppercase; }
+        :root {
+            --bg: #050505;
+            --card-bg: #0a0a0a;
+            --border: #222;
+            --text-main: #00ff00;
+            --text-dim: #888;
+            --accent-blue: #38bdf8;
+            --accent-orange: #f59e0b;
+            --danger: #ff003c;
+        }
+
+        body { background: var(--bg); color: var(--text-main); font-family: 'JetBrains Mono', monospace; padding: 20px; line-height: 1.5; }
+        .dashboard { max-width: 1000px; margin: 0 auto; }
+        h1 { border-bottom: 1px dashed var(--border); padding-bottom: 10px; margin-top: 0; color: #fff; }
         
-        button { background: #ff003c; color: white; border: none; padding: 15px 30px; font-family: inherit; font-weight: bold; font-size: 1rem; border-radius: 4px; cursor: pointer; transition: 0.2s; width: 100%; }
+        .section-title { margin-top: 30px; font-size: 1.2rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 2px; }
+        
+        /* Grid Layouts */
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 15px 0; }
+        .trending-grid { display: grid; grid-template-columns: 1fr; gap: 10px; margin: 15px 0; }
+        
+        /* Cards */
+        .metric-card { background: var(--card-bg); padding: 20px; border-radius: 6px; border: 1px solid var(--border); position: relative; overflow: hidden; }
+        .metric-card::before { content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; }
+        .card-green::before { background: var(--text-main); }
+        .card-blue::before { background: var(--accent-blue); }
+        
+        .metric-value { font-size: 2.2rem; font-weight: bold; color: #fff; margin-bottom: 5px; }
+        .metric-label { color: var(--text-dim); font-size: 0.85rem; text-transform: uppercase; }
+        
+        /* Trending List */
+        .trending-item { background: var(--card-bg); border: 1px solid var(--border); padding: 12px 20px; border-radius: 4px; display: flex; justify-content: space-between; border-left: 4px solid var(--accent-orange); color: #fff; }
+        
+        /* Controls & Logs */
+        button { background: var(--danger); color: white; border: none; padding: 15px 30px; font-family: inherit; font-weight: bold; font-size: 1rem; border-radius: 4px; cursor: pointer; transition: 0.2s; width: 100%; margin-top: 20px; text-transform: uppercase; letter-spacing: 1px; }
         button:hover { background: #cc0030; }
-        .log-box { margin-top: 20px; padding: 15px; background: #000; border: 1px solid #333; color: #aaa; font-size: 0.85rem; height: 100px; overflow-y: auto; }
+        
+        .log-box { margin-top: 20px; padding: 15px; background: #000; border: 1px solid var(--border); color: #aaa; font-size: 0.85rem; height: 120px; overflow-y: auto; font-family: monospace; }
+        .log-time { color: var(--accent-blue); margin-right: 10px; }
     </style>
 </head>
 <body>
 
 <div class="dashboard">
-    <h1>[VANGUARD] // SYSTEM_STATUS</h1>
+    <h1>[VANGUARD] // COMMAND_CENTER</h1>
     
+    <div class="section-title">System Health (L1 & L2)</div>
     <div class="metric-grid">
-        <div class="metric-card">
+        <div class="metric-card card-green">
             <div id="ui-ram" class="metric-value">--</div>
             <div class="metric-label">Active RAM (MB)</div>
         </div>
-        <div class="metric-card">
+        <div class="metric-card card-green">
             <div id="ui-goroutines" class="metric-value">--</div>
             <div class="metric-label">Active Goroutines</div>
         </div>
-        <div class="metric-card">
+        <div class="metric-card card-green">
             <div id="ui-cache" class="metric-value">--</div>
-            <div class="metric-label">Batches Cached</div>
+            <div class="metric-label">L2 Redis Batches</div>
         </div>
     </div>
 
-    <button onclick="flushCache()">INITIATE SYSTEM FLUSH</button>
+    <div class="section-title">Traffic Analytics</div>
+    <div class="metric-grid">
+        <div class="metric-card card-blue">
+            <div id="ui-views-total" class="metric-value">--</div>
+            <div class="metric-label">Total Page Views</div>
+        </div>
+        <div class="metric-card card-blue">
+            <div id="ui-unique-total" class="metric-value">--</div>
+            <div class="metric-label">Unique Visitors (All-Time)</div>
+        </div>
+        <div class="metric-card card-blue">
+            <div id="ui-unique-today" class="metric-value" style="color: var(--accent-blue);">--</div>
+            <div class="metric-label">Unique Visitors (Today)</div>
+        </div>
+    </div>
 
-    <div id="consoleLog" class="log-box">System initialized. Awaiting commands...</div>
+    <div class="section-title">Top 5 Trending Searches</div>
+    <div id="trendingList" class="trending-grid">
+        <div class="trending-item" style="border-left-color: var(--border);">Awaiting data...</div>
+    </div>
+
+    <button onclick="flushCache()">[⚠] INITIATE SYSTEM FLUSH</button>
+
+    <div id="consoleLog" class="log-box"></div>
 </div>
 
 <script>
     const logBox = document.getElementById('consoleLog');
     
+    // Auth Management
+    let adminAuth = sessionStorage.getItem('vanguard_auth') || "";
+
     function log(msg) {
-        logBox.innerHTML = `> ${msg}<br>` + logBox.innerHTML;
+        const time = new Date().toLocaleTimeString();
+        logBox.innerHTML = `<span class="log-time">[${time}]</span> ${msg}<br>` + logBox.innerHTML;
     }
 
+    // Initialize Log
+    log("Terminal active. Establishing uplink...");
+
     async function fetchStatus() {
+        // If we don't have the password yet, ask for it.
+        if (!adminAuth) {
+            const pwd = prompt("AUTHORIZATION REQUIRED\nEnter Admin Password:");
+            if (!pwd) { 
+                log("ERROR: Authorization aborted by user."); 
+                return; 
+            }
+            adminAuth = btoa("admin:" + pwd);
+            sessionStorage.setItem('vanguard_auth', adminAuth);
+        }
+
         try {
-            const res = await fetch('/api/admin/status');
+            const res = await fetch('/api/admin/status', {
+                headers: { 'Authorization': 'Basic ' + adminAuth }
+            });
+            
             if (res.status === 401) {
-                log("ERROR: Unauthorized. Did you cancel the password prompt?");
+                sessionStorage.removeItem('vanguard_auth'); // Clear bad password
+                adminAuth = "";
+                log("CRITICAL ERROR: Invalid credentials.");
                 return;
             }
+
             const data = await res.json();
             
+            // 1. Populate System Health
             document.getElementById('ui-ram').innerText = data.memory.active_ram_mb;
             document.getElementById('ui-goroutines').innerText = data.memory.goroutines;
             document.getElementById('ui-cache').innerText = data.cache.batches_stored;
-            log("System metrics updated.");
+            
+            // 2. Populate Analytics
+            const analytics = data.analytics || {};
+            document.getElementById('ui-views-total').innerText = analytics.total_page_views || 0;
+            document.getElementById('ui-unique-total').innerText = analytics.unique_visitors || 0;
+            document.getElementById('ui-unique-today').innerText = analytics.visitors_today || 0;
+
+            // 3. Populate Trending Searches
+            const trendingList = document.getElementById('trendingList');
+            trendingList.innerHTML = ''; // Clear old data
+            
+            if (analytics.trending_searches && analytics.trending_searches.length > 0) {
+                analytics.trending_searches.forEach(search => {
+                    const item = document.createElement('div');
+                    item.className = 'trending-item';
+                    item.innerHTML = `<span>${search.split(' ')[0]}</span> <span>${search.split(' ')[1]} ${search.split(' ')[2]}</span>`;
+                    trendingList.appendChild(item);
+                });
+            } else {
+                trendingList.innerHTML = '<div class="trending-item" style="border-left-color: #333;">No search data available.</div>';
+            }
+
+            log("Uplink successful. Telemetry updated.");
+            
         } catch (e) {
-            log("Network error fetching status.");
+            log("WARNING: Network error fetching telemetry.");
         }
     }
 
     async function flushCache() {
-        if (!confirm("Are you sure? This will wipe the RAM vault and force the engine to re-scrape the college portal.")) return;
+        if (!adminAuth) {
+            log("ERROR: Cannot flush without authorization.");
+            fetchStatus(); // Force prompt
+            return;
+        }
+
+        if (!confirm("WARNING: This will annihilate the L1 RAM Vault and L2 Redis Cache. The system will be forced to re-scrape the college portal. Proceed?")) return;
         
         try {
-            const res = await fetch('/api/admin/flush', { method: 'POST' });
+            const res = await fetch('/api/admin/flush', { 
+                method: 'POST',
+                headers: { 'Authorization': 'Basic ' + adminAuth }
+            });
+            
+            if (res.status === 401) {
+                log("CRITICAL ERROR: Unauthorized flush attempt.");
+                return;
+            }
+
             const data = await res.json();
-            log(data.message || "Flush complete.");
-            fetchStatus();
+            log(`ACTION CONFIRMED: ${data.message}`);
+            fetchStatus(); // Immediately update the UI to show 0 batches
         } catch (e) {
-            log("ERROR: Flush failed.");
+            log("CRITICAL ERROR: Flush command failed to execute.");
         }
     }
 
-    // Refresh status every 5 seconds
+    // Auto-refresh the telemetry every 10 seconds (changed from 5 to spare the network slightly)
     fetchStatus();
-    setInterval(fetchStatus, 5000);
+    setInterval(fetchStatus, 10000);
 </script>
 </body>
 </html>

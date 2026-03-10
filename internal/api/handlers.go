@@ -222,6 +222,11 @@ func GetClassBatch(c *gin.Context) {
 
 
 	cacheKey := fmt.Sprintf("%s-%s-%s", strings.ToUpper(sectionKey), yearStr, examID)
+	
+	// Increment the search counter for this specific batch
+	if cache.Rdb != nil {
+		cache.Rdb.ZIncrBy(cache.Ctx, "analytics:trending_searches", 1, cacheKey)
+	}
 
 	// 1. FAST PATH: Check the Tiered Cache
 	cachedData, sourceStr, found := cache.GetTieredBatch(cacheKey)
@@ -359,4 +364,26 @@ func GetExams(c *gin.Context) {
 		"exams": systemExams,
 		"meta":  gin.H{"source": "live_scrape"},
 	})
+}
+
+// Add this new handler to handlers.go
+func TrackView(c *gin.Context) {
+	if cache.Rdb != nil {
+		ip := c.ClientIP()
+		today := time.Now().Format("2006-01-02") // e.g., "2026-03-11"
+
+		// 1. Increment total views
+		cache.Rdb.Incr(cache.Ctx, "analytics:total_views")
+		
+		// 2. Track unique IP for all-time
+		cache.Rdb.PFAdd(cache.Ctx, "analytics:unique_ips_total", ip)
+		
+		// 3. Track unique IP for today specifically
+		cache.Rdb.PFAdd(cache.Ctx, "analytics:unique_ips:"+today, ip)
+		
+		// Optional: Expire the daily key after 48 hours to save Redis space
+		cache.Rdb.Expire(cache.Ctx, "analytics:unique_ips:"+today, 48*time.Hour)
+	}
+	
+	c.JSON(http.StatusOK, gin.H{"status": "tracked"})
 }

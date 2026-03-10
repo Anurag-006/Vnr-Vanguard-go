@@ -48,6 +48,7 @@ func main() {
 		v1.GET("/exams", api.GetExams)
 		v1.GET("/stats", api.GetStats) // Fast metadata read
 		v1.GET("/ping", func(c *gin.Context) { c.JSON(200, gin.H{"status": "awake"}) })
+		v1.POST("/track", api.TrackView)
 
 		// --- Heavy Scraper Group (Rate Limited) ---
 		// We move /class and /squad here. Do NOT register them in v1 above.
